@@ -1,0 +1,115 @@
+# Docker Compose version
+version: '3.8'
+
+# Define the services that will be run
+services:
+  # Bitcoin Core Node Service
+  bitcoind:
+    # Use the official Bitcoin Core Docker image
+    image: bitcoin/bitcoin-core:latest
+    # Name the container for easy reference
+    container_name: bitcoind
+    # Environment variables for Bitcoin Core configuration
+    environment:
+      # Set the network (mainnet, testnet, or regtest)
+      - BITCOIN_NETWORK=mainnet
+      # RPC username for API access
+      - BITCOIN_RPC_USER=bitcoin
+      # RPC password for API access (change this!)
+      - BITCOIN_RPC_PASSWORD=your_secure_password_here
+      # Restrict RPC connections to localhost only
+      - BITCOIN_RPC_ALLOW_IP=127.0.0.1
+    # Persistent volume for Bitcoin data
+    volumes:
+      - bitcoin_data:/home/bitcoin/.bitcoin
+    # Port mappings (host:container)
+    ports:
+      - "8333:8333"  # P2P port for Bitcoin network communication
+      # RPC port only accessible from localhost
+      - "127.0.0.1:8332:8332"
+    # Command to start Bitcoin Core with specific options
+    command: >
+      bitcoind 
+      -printtoconsole 
+      -rpcallowip=127.0.0.1 
+      -rpcbind=127.0.0.1
+      -maxconnections=125
+      -maxuploadtarget=10000
+      -maxmempool=500
+      -dbcache=4096
+      -maxorphantx=100
+    # Restart policy: restart unless explicitly stopped
+    restart: unless-stopped
+    # Resource limits and reservations
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 8G
+        reservations:
+          cpus: '4'
+          memory: 4G
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+
+  # Lightning Network Daemon Service
+  lnd:
+    # Use the official LND Docker image
+    image: lightninglabs/lnd:latest
+    # Name the container for easy reference
+    container_name: lnd
+    # Environment variables for LND configuration
+    environment:
+      # Set the chain (bitcoin, litecoin, etc.)
+      - LND_CHAIN=bitcoin
+      # Specify the Bitcoin node to connect to
+      - LND_BITCOIN_NODE=bitcoind
+      # RPC credentials for Bitcoin Core
+      - LND_BITCOIN_RPC_USER=bitcoin
+      - LND_BITCOIN_RPC_PASS=your_secure_password_here
+      # Bitcoin Core connection details
+      - LND_BITCOIN_RPC_HOST=bitcoind
+      - LND_BITCOIN_RPC_PORT=8332
+      # ZMQ endpoints for real-time block and transaction notifications
+      - LND_BITCOIN_ZMQPUBRAWBLOCK=tcp://bitcoind:28332
+      - LND_BITCOIN_ZMQPUBRAWTX=tcp://bitcoind:28333
+      # Additional LND security settings
+      - LND_TLS_CERT_PATH=/root/.lnd/tls.cert
+      - LND_TLS_KEY_PATH=/root/.lnd/tls.key
+      - LND_TLS_EXTRA_DOMAIN=your-domain.com
+      - LND_TLS_EXTRA_IP=your-server-ip
+    # Persistent volume for LND data
+    volumes:
+      - lnd_data:/root/.lnd
+    # Port mappings (host:container)
+    ports:
+      - "9735:9735"  # Lightning P2P port for node communication
+      # gRPC port only accessible from localhost
+      - "127.0.0.1:10009:10009"
+    # Ensure Bitcoin Core starts before LND
+    depends_on:
+      - bitcoind
+    # Restart policy: restart unless explicitly stopped
+    restart: unless-stopped
+    # Resource limits and reservations
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+
+# Define persistent volumes for data storage
+volumes:
+  # Volume for Bitcoin Core blockchain and configuration
+  bitcoin_data:
+  # Volume for LND data and wallet
+  lnd_data: 
