@@ -14,9 +14,9 @@ services:
       # Set the network (mainnet, testnet, or regtest)
       - BITCOIN_NETWORK=mainnet
       # RPC username for API access
-      - BITCOIN_RPC_USER=bitcoin
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
       # RPC password for API access (change this!)
-      - BITCOIN_RPC_PASSWORD=your_secure_password_here
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
       # Restrict RPC connections to localhost only
       - BITCOIN_RPC_ALLOW_IP=127.0.0.1
     # Persistent volume for Bitcoin data
@@ -67,8 +67,8 @@ services:
       # Specify the Bitcoin node to connect to
       - LND_BITCOIN_NODE=bitcoind
       # RPC credentials for Bitcoin Core
-      - LND_BITCOIN_RPC_USER=bitcoin
-      - LND_BITCOIN_RPC_PASS=your_secure_password_here
+      - LND_BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
+      - LND_BITCOIN_RPC_PASS=${BITCOIN_RPC_PASSWORD}
       # Bitcoin Core connection details
       - LND_BITCOIN_RPC_HOST=bitcoind
       - LND_BITCOIN_RPC_PORT=8332
@@ -78,8 +78,8 @@ services:
       # Additional LND security settings
       - LND_TLS_CERT_PATH=/root/.lnd/tls.cert
       - LND_TLS_KEY_PATH=/root/.lnd/tls.key
-      - LND_TLS_EXTRA_DOMAIN=your-domain.com
-      - LND_TLS_EXTRA_IP=your-server-ip
+      - LND_TLS_EXTRA_DOMAIN=${LND_TLS_EXTRA_DOMAIN}
+      - LND_TLS_EXTRA_IP=${LND_TLS_EXTRA_IP}
     # Persistent volume for LND data
     volumes:
       - lnd_data:/root/.lnd
